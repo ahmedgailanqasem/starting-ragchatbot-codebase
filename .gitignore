@@ -8,11 +8,15 @@ __pycache__/
 *$py.class
 *.so
 .Python
+*.egg-info/
+dist/
+build/
 
 # Virtual environments
 venv/
 env/
 ENV/
+.venv/
 
 # ChromaDB
 backend/chroma_db/
@@ -21,10 +25,10 @@ backend/chroma_db/
 uploads/
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
+.claude/
 
 # OS
 .DS_Store
