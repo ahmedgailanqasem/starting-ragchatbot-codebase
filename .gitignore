@@ -33,3 +33,6 @@ uploads/
 # OS
 .DS_Store
 Thumbs.db
+
+# Playwright MCP
+.playwright-mcp/
