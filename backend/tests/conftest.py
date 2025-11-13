@@ -7,6 +7,7 @@ import sys
 import tempfile
 import shutil
 from typing import List
+from unittest.mock import Mock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -151,3 +152,86 @@ def mock_ai_generator(monkeypatch):
     monkeypatch.setattr(anthropic, "Anthropic", mock_anthropic_init)
 
     return AIGenerator(api_key="test-key", model="claude-sonnet-4-20250514")
+
+
+# ===== API Testing Fixtures =====
+
+@pytest.fixture
+def test_client():
+    """Create a FastAPI test client without static file mounting"""
+    from fastapi.testclient import TestClient
+    from test_app import create_test_app
+
+    # Create test app without RAG system (will be injected later)
+    test_app = create_test_app(rag_system=None)
+    client = TestClient(test_app)
+
+    return client
+
+
+@pytest.fixture
+def mock_rag_system(test_config, populated_vector_store, monkeypatch):
+    """Create a mock RAG system for API testing"""
+    # Mock the AIGenerator to avoid real API calls
+    class MockAnthropicClient:
+        class Messages:
+            class Content:
+                def __init__(self, text):
+                    self.text = text
+                    self.type = "text"
+
+            class Response:
+                def __init__(self, text, stop_reason="end_turn"):
+                    self.content = [MockAnthropicClient.Messages.Content(text)]
+                    self.stop_reason = stop_reason
+
+            def create(self, **kwargs):
+                return MockAnthropicClient.Messages.Response(
+                    "Based on the course materials, RAG systems combine retrieval and generation."
+                )
+
+        def __init__(self, api_key):
+            self.messages = self.Messages()
+
+    def mock_anthropic_init(api_key):
+        return MockAnthropicClient(api_key)
+
+    import anthropic
+    monkeypatch.setattr(anthropic, "Anthropic", mock_anthropic_init)
+
+    # Create RAG system with test config
+    rag = RAGSystem(test_config)
+    rag.vector_store = populated_vector_store
+
+    return rag
+
+
+@pytest.fixture
+def api_client_with_rag(mock_rag_system):
+    """Create a test client with a mock RAG system injected"""
+    from fastapi.testclient import TestClient
+    from test_app import create_test_app
+
+    # Create test app with the mock RAG system
+    test_app = create_test_app(rag_system=mock_rag_system)
+    client = TestClient(test_app)
+
+    return client
+
+
+@pytest.fixture
+def sample_query_request():
+    """Sample query request for testing"""
+    return {
+        "query": "What is RAG?",
+        "session_id": None
+    }
+
+
+@pytest.fixture
+def sample_query_request_with_session():
+    """Sample query request with session ID for testing"""
+    return {
+        "query": "Tell me more about vector databases",
+        "session_id": "test-session-123"
+    }
