@@ -1,9 +1,10 @@
 """
 Tests for CourseSearchTool and related search functionality
 """
+
 import pytest
-from search_tools import CourseSearchTool, ToolManager, CourseOutlineTool
-from vector_store import VectorStore, SearchResults
+from search_tools import CourseOutlineTool, CourseSearchTool, ToolManager
+from vector_store import SearchResults, VectorStore
 
 
 class TestCourseSearchTool:
@@ -18,31 +19,31 @@ class TestCourseSearchTool:
         """Test execute with a valid query returns results"""
         result = course_search_tool.execute(query="What is RAG?")
         assert result != "", "execute() should return non-empty string for valid query"
-        assert "No relevant content found" not in result, "Should find content for RAG query"
+        assert (
+            "No relevant content found" not in result
+        ), "Should find content for RAG query"
 
     def test_execute_with_course_filter(self, course_search_tool):
         """Test execute with course name filter"""
         result = course_search_tool.execute(
-            query="embeddings",
-            course_name="Introduction to RAG Systems"
+            query="embeddings", course_name="Introduction to RAG Systems"
         )
         assert isinstance(result, str), "Should return string with course filter"
-        assert "Introduction to RAG Systems" in result or "No relevant content found" in result
+        assert (
+            "Introduction to RAG Systems" in result
+            or "No relevant content found" in result
+        )
 
     def test_execute_with_partial_course_name(self, course_search_tool):
         """Test execute with partial course name (semantic matching)"""
         result = course_search_tool.execute(
-            query="vector databases",
-            course_name="RAG"  # Partial match
+            query="vector databases", course_name="RAG"  # Partial match
         )
         assert isinstance(result, str), "Should return string with partial course name"
 
     def test_execute_with_lesson_filter(self, course_search_tool):
         """Test execute with lesson number filter"""
-        result = course_search_tool.execute(
-            query="vector",
-            lesson_number=2
-        )
+        result = course_search_tool.execute(query="vector", lesson_number=2)
         assert isinstance(result, str), "Should return string with lesson filter"
 
     def test_execute_with_both_filters(self, course_search_tool):
@@ -50,24 +51,20 @@ class TestCourseSearchTool:
         result = course_search_tool.execute(
             query="embeddings",
             course_name="Introduction to RAG Systems",
-            lesson_number=3
+            lesson_number=3,
         )
         assert isinstance(result, str), "Should return string with both filters"
 
     def test_execute_with_nonexistent_course(self, course_search_tool):
         """Test execute with non-existent course name"""
         result = course_search_tool.execute(
-            query="test query",
-            course_name="Nonexistent Course XYZ"
+            query="test query", course_name="Nonexistent Course XYZ"
         )
         assert "No course found" in result or "No relevant content found" in result
 
     def test_execute_with_invalid_lesson(self, course_search_tool):
         """Test execute with non-existent lesson number"""
-        result = course_search_tool.execute(
-            query="test query",
-            lesson_number=999
-        )
+        result = course_search_tool.execute(query="test query", lesson_number=999)
         assert "No relevant content found" in result
 
     def test_execute_formats_results_correctly(self, course_search_tool):
@@ -86,7 +83,9 @@ class TestCourseSearchTool:
 
         # If results were found, sources should be tracked
         if "No relevant content found" not in result:
-            assert len(course_search_tool.last_sources) > 0, "Should track sources when results found"
+            assert (
+                len(course_search_tool.last_sources) > 0
+            ), "Should track sources when results found"
 
             # Check source structure
             for source in course_search_tool.last_sources:
@@ -99,7 +98,10 @@ class TestCourseSearchTool:
         course_search_tool.last_sources = []
         result = course_search_tool.execute(query="embeddings")
 
-        if "No relevant content found" not in result and course_search_tool.last_sources:
+        if (
+            "No relevant content found" not in result
+            and course_search_tool.last_sources
+        ):
             for source in course_search_tool.last_sources:
                 label = source["label"]
                 # Should contain course title
@@ -194,8 +196,7 @@ class TestToolManager:
     def test_execute_tool(self, tool_manager):
         """Test executing a registered tool"""
         result = tool_manager.execute_tool(
-            "search_course_content",
-            query="What is RAG?"
+            "search_course_content", query="What is RAG?"
         )
 
         assert isinstance(result, str)
@@ -245,9 +246,9 @@ class TestVectorStoreIntegration:
         results = populated_vector_store.search(query="RAG")
 
         assert isinstance(results, SearchResults)
-        assert hasattr(results, 'documents')
-        assert hasattr(results, 'metadata')
-        assert hasattr(results, 'error')
+        assert hasattr(results, "documents")
+        assert hasattr(results, "metadata")
+        assert hasattr(results, "error")
 
     def test_search_with_valid_query(self, populated_vector_store):
         """Test search with valid query returns results"""
@@ -270,8 +271,7 @@ class TestVectorStoreIntegration:
     def test_search_with_course_filter(self, populated_vector_store):
         """Test search with course name filter"""
         results = populated_vector_store.search(
-            query="test",
-            course_name="Introduction to RAG Systems"
+            query="test", course_name="Introduction to RAG Systems"
         )
 
         # Should either find results or return empty (not error)
@@ -280,8 +280,7 @@ class TestVectorStoreIntegration:
     def test_search_with_invalid_course(self, populated_vector_store):
         """Test search with invalid course name"""
         results = populated_vector_store.search(
-            query="test",
-            course_name="Nonexistent Course"
+            query="test", course_name="Nonexistent Course"
         )
 
         # Should return error about course not found

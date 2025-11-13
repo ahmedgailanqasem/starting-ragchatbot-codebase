@@ -1,22 +1,24 @@
 """
 Pytest configuration and fixtures for RAG system tests
 """
-import pytest
+
 import os
+import shutil
 import sys
 import tempfile
-import shutil
 from typing import List
+
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from vector_store import VectorStore, SearchResults
-from models import Course, Lesson, CourseChunk
-from search_tools import CourseSearchTool, ToolManager, CourseOutlineTool
 from ai_generator import AIGenerator
-from rag_system import RAGSystem
 from config import Config
+from models import Course, CourseChunk, Lesson
+from rag_system import RAGSystem
+from search_tools import CourseOutlineTool, CourseSearchTool, ToolManager
+from vector_store import SearchResults, VectorStore
 
 
 @pytest.fixture
@@ -32,9 +34,7 @@ def temp_chroma_path():
 def test_vector_store(temp_chroma_path):
     """Create a test vector store instance"""
     return VectorStore(
-        chroma_path=temp_chroma_path,
-        embedding_model="all-MiniLM-L6-v2",
-        max_results=5
+        chroma_path=temp_chroma_path, embedding_model="all-MiniLM-L6-v2", max_results=5
     )
 
 
@@ -46,11 +46,27 @@ def sample_course():
         course_link="https://example.com/rag-course",
         instructor="Dr. Test",
         lessons=[
-            Lesson(lesson_number=0, title="Course Overview", lesson_link="https://example.com/lesson-0"),
-            Lesson(lesson_number=1, title="What is RAG", lesson_link="https://example.com/lesson-1"),
-            Lesson(lesson_number=2, title="Vector Databases", lesson_link="https://example.com/lesson-2"),
-            Lesson(lesson_number=3, title="Embeddings", lesson_link="https://example.com/lesson-3")
-        ]
+            Lesson(
+                lesson_number=0,
+                title="Course Overview",
+                lesson_link="https://example.com/lesson-0",
+            ),
+            Lesson(
+                lesson_number=1,
+                title="What is RAG",
+                lesson_link="https://example.com/lesson-1",
+            ),
+            Lesson(
+                lesson_number=2,
+                title="Vector Databases",
+                lesson_link="https://example.com/lesson-2",
+            ),
+            Lesson(
+                lesson_number=3,
+                title="Embeddings",
+                lesson_link="https://example.com/lesson-3",
+            ),
+        ],
     )
 
 
@@ -63,22 +79,22 @@ def sample_chunks():
             course_title="Introduction to RAG Systems",
             lesson_number=1,
             lesson_link="https://example.com/lesson-1",
-            chunk_index=0
+            chunk_index=0,
         ),
         CourseChunk(
             content="Vector databases store embeddings which are numerical representations of text. Popular vector databases include ChromaDB, Pinecone, and Weaviate.",
             course_title="Introduction to RAG Systems",
             lesson_number=2,
             lesson_link="https://example.com/lesson-2",
-            chunk_index=1
+            chunk_index=1,
         ),
         CourseChunk(
             content="Embeddings are created using embedding models like SentenceTransformers. These models convert text into dense vectors that capture semantic meaning.",
             course_title="Introduction to RAG Systems",
             lesson_number=3,
             lesson_link="https://example.com/lesson-3",
-            chunk_index=2
-        )
+            chunk_index=2,
+        ),
     ]
 
 
@@ -125,6 +141,7 @@ def test_config(temp_chroma_path):
 @pytest.fixture
 def mock_ai_generator(monkeypatch):
     """Create a mock AI generator that doesn't make real API calls"""
+
     class MockAnthropicClient:
         class Messages:
             class Content:
@@ -148,6 +165,7 @@ def mock_ai_generator(monkeypatch):
         return MockAnthropicClient(api_key)
 
     import anthropic
+
     monkeypatch.setattr(anthropic, "Anthropic", mock_anthropic_init)
 
     return AIGenerator(api_key="test-key", model="claude-sonnet-4-20250514")

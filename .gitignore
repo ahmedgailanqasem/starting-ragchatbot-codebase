@@ -12,6 +12,13 @@ __pycache__/
 dist/
 build/
 
+# Code quality tools
+.mypy_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+*.cover
+
 # Virtual environments
 venv/
 env/
