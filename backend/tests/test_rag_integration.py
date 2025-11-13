@@ -1,12 +1,14 @@
 """
 Integration tests for RAG system query handling
 """
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-import tempfile
+
 import shutil
-from rag_system import RAGSystem
+import tempfile
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 from config import Config
+from rag_system import RAGSystem
 
 
 class TestRAGSystemIntegration:
@@ -42,20 +44,24 @@ class TestRAGSystemIntegration:
         assert "search_course_content" in tool_names
         assert "get_course_outline" in tool_names
 
-    @patch('anthropic.Anthropic')
+    @patch("anthropic.Anthropic")
     def test_query_without_tools_direct_response(self, mock_anthropic, test_rag_system):
         """Test query that doesn't require tools (general knowledge)"""
         # Mock API response - no tool use
         mock_client = Mock()
         mock_response = Mock()
-        mock_response.content = [Mock(text="RAG stands for Retrieval-Augmented Generation")]
+        mock_response.content = [
+            Mock(text="RAG stands for Retrieval-Augmented Generation")
+        ]
         mock_response.stop_reason = "end_turn"
         mock_client.messages.create.return_value = mock_response
         mock_anthropic.return_value = mock_client
 
         # Reinitialize AI generator with mocked client
         test_rag_system.ai_generator = MagicMock()
-        test_rag_system.ai_generator.generate_response.return_value = "RAG stands for Retrieval-Augmented Generation"
+        test_rag_system.ai_generator.generate_response.return_value = (
+            "RAG stands for Retrieval-Augmented Generation"
+        )
 
         # Test
         response, sources = test_rag_system.query("What does RAG stand for?")
@@ -63,7 +69,7 @@ class TestRAGSystemIntegration:
         assert isinstance(response, str)
         assert len(response) > 0
 
-    @patch('anthropic.Anthropic')
+    @patch("anthropic.Anthropic")
     def test_query_with_tool_use(self, mock_anthropic, test_rag_system):
         """Test query that triggers tool use"""
         # Mock API responses
@@ -90,9 +96,10 @@ class TestRAGSystemIntegration:
 
         # Reinitialize with mock
         from ai_generator import AIGenerator
+
         test_rag_system.ai_generator = AIGenerator(
             api_key=test_rag_system.config.ANTHROPIC_API_KEY,
-            model=test_rag_system.config.ANTHROPIC_MODEL
+            model=test_rag_system.config.ANTHROPIC_MODEL,
         )
 
         # Test
@@ -104,7 +111,9 @@ class TestRAGSystemIntegration:
     def test_query_returns_tuple(self, test_rag_system):
         """Test that query returns (response, sources) tuple"""
         # Mock the AI generator
-        test_rag_system.ai_generator.generate_response = Mock(return_value="Test response")
+        test_rag_system.ai_generator.generate_response = Mock(
+            return_value="Test response"
+        )
 
         result = test_rag_system.query("Test query")
 
@@ -127,7 +136,9 @@ class TestRAGSystemIntegration:
 
     def test_query_updates_session_history(self, test_rag_system):
         """Test that query updates session history"""
-        test_rag_system.ai_generator.generate_response = Mock(return_value="Response to question")
+        test_rag_system.ai_generator.generate_response = Mock(
+            return_value="Response to question"
+        )
 
         session_id = "test_session_456"
 
@@ -171,7 +182,7 @@ class TestRAGSystemIntegration:
         # Simulate tool execution that populates sources
         test_rag_system.search_tool.last_sources = [
             {"label": "Course A - Lesson 1", "link": "http://example.com/1"},
-            {"label": "Course A - Lesson 2", "link": "http://example.com/2"}
+            {"label": "Course A - Lesson 2", "link": "http://example.com/2"},
         ]
 
         # Mock AI to not actually call API
@@ -236,14 +247,13 @@ class TestRAGSystemContentQueries:
     def test_content_query_with_course_filter(self, rag_with_data):
         """Test content query with course filter"""
         result = rag_with_data.search_tool.execute(
-            query="embeddings",
-            course_name="Introduction to RAG Systems"
+            query="embeddings", course_name="Introduction to RAG Systems"
         )
 
         assert isinstance(result, str)
         assert "query failed" not in result.lower()
 
-    @patch('anthropic.Anthropic')
+    @patch("anthropic.Anthropic")
     def test_full_query_flow_with_search(self, mock_anthropic, rag_with_data):
         """Test full query flow that uses search tool"""
         # Setup mock to simulate tool use
@@ -262,7 +272,9 @@ class TestRAGSystemContentQueries:
 
         # Final response
         final_response = Mock()
-        final_response.content = [Mock(text="Embeddings are numerical representations created by models...")]
+        final_response.content = [
+            Mock(text="Embeddings are numerical representations created by models...")
+        ]
         final_response.stop_reason = "end_turn"
 
         mock_client.messages.create.side_effect = [tool_response, final_response]
@@ -270,9 +282,10 @@ class TestRAGSystemContentQueries:
 
         # Reinitialize AI generator
         from ai_generator import AIGenerator
+
         rag_with_data.ai_generator = AIGenerator(
             api_key=rag_with_data.config.ANTHROPIC_API_KEY,
-            model=rag_with_data.config.ANTHROPIC_MODEL
+            model=rag_with_data.config.ANTHROPIC_MODEL,
         )
 
         # Execute query
@@ -307,7 +320,9 @@ class TestRAGSystemErrorHandling:
     def test_query_with_empty_vector_store(self, test_config):
         """Test query when vector store is empty"""
         rag = RAGSystem(test_config)
-        rag.ai_generator.generate_response = Mock(return_value="I don't have information about that")
+        rag.ai_generator.generate_response = Mock(
+            return_value="I don't have information about that"
+        )
 
         response, sources = rag.query("What is RAG?")
 
@@ -325,7 +340,7 @@ class TestRAGSystemErrorHandling:
 
         assert isinstance(response, str)
 
-    @patch('anthropic.Anthropic')
+    @patch("anthropic.Anthropic")
     def test_query_handles_api_errors_gracefully(self, mock_anthropic, test_config):
         """Test that API errors are handled gracefully"""
         mock_client = Mock()
